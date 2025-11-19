@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Chá de Casa Nova - Andrielle</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  :root{ --pink-1:#ff2d92; --pink-2:#ff6db7; --bg:#fff6fb; --card:#ffffff; --muted:#9b9b9b }
+  *{box-sizing:border-box}
+  body{margin:0; font-family:'Poppins',sans-serif; background:linear-gradient(180deg,#fff0f7 0%, #fff6fb 35%, #fff 100%); color:#222}
+  header{background:linear-gradient(135deg,var(--pink-1),var(--pink-2)); padding:24px; display:flex; gap:16px; align-items:center; justify-content:center; flex-wrap:wrap; box-shadow:0 8px 30px rgba(0,0,0,0.12); border-bottom-left-radius:28px; border-bottom-right-radius:28px}
+  header img{ height:60px; width:60px; object-fit:contain; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,0.18) }
+  .brand{ display:flex; flex-direction:column; align-items:center; color:white; text-align:center }
+  .brand .title{ font-size:30px; font-weight:700 }
+  .container{ max-width:1100px; margin:30px auto; padding:22px; background:var(--card); border-radius:14px; box-shadow:0 18px 40px rgba(0,0,0,0.06) }
+  .grid{ display:grid; grid-template-columns:1fr 340px; gap:20px }
+  @media(max-width:900px){ .grid{grid-template-columns:1fr} }
+  h2{ color:var(--pink-1); display:flex; align-items:center; gap:10px; font-size:18px }
+  .list{ display:flex; flex-direction:column; gap:10px }
+  .item{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; border-radius:10px; background:linear-gradient(180deg,#fff,#fffafc); border:1px solid rgba(255,45,146,0.08); transition:all .18s }
+  .item:hover{ transform:translateY(-3px) }
+  .item.reservado{ opacity:0.6; cursor:not-allowed }
+  .meta{ display:flex; gap:12px; align-items:center }
+  .ico{ width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--pink-1),var(--pink-2)); color:white }
+  .badge{ min-width:44px; text-align:center; font-weight:700; color:white; padding:6px 8px; border-radius:9px; background:linear-gradient(135deg,#4caf50,#00b300) }
+  .badge.limited{ background:linear-gradient(135deg,#ff9bbf,#ff6db7) }
+  .small{ font-size:13px; color:var(--muted) }
+  .side{ padding:12px; border-radius:10px; background:linear-gradient(180deg,#fff,#fffafc); border:1px solid rgba(0,0,0,0.04) }
+  .res-card{ padding:10px; border-radius:8px; background:#fff; border:1px solid rgba(0,0,0,0.04); margin-bottom:8px }
+  .modal-bg{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.45); z-index:800 }
+  .modal{ width:94%; max-width:520px; background:white; border-radius:12px; padding:18px }
+  input, textarea{ width:100%; padding:12px; margin-top:8px; border-radius:8px; border:1px solid #e6e6e6 }
+  .actions{ display:flex; gap:8px; margin-top:12px }
+  .btn{ padding:10px 12px; border-radius:8px; border:none; font-weight:700; cursor:pointer }
+  .btn.primary{ background:var(--pink-1); color:white }
+  .btn.ghost{ background:transparent; border:1px solid #eee }
+</style>
+</head>
+<body>
+<header>
+  <img src="logo.png" alt="logo Andrielle" onerror="this.style.display='none'">
+  <div class="brand">
+    <div class="title">Andrielle</div>
+    <div class="subtitle">Chá de Casa Nova — Lista</div>
+  </div>
+</header>
+<main class="container">
+  <div class="grid">
+    <div>
+      <h2><i class="fa-solid fa-kitchen-set"></i> Cozinha</h2>
+      <div id="Cozinha" class="list"></div>
+
+      <h2><i class="fa-solid fa-bath"></i> Banheiro</h2>
+      <div id="Banheiro" class="list"></div>
+
+      <h2><i class="fa-solid fa-bed"></i> Quarto</h2>
+      <div id="Quarto" class="list"></div>
+
+      <h2><i class="fa-solid fa-broom"></i> Área de Serviço</h2>
+      <div id="Área de Serviço" class="list"></div>
+    </div>
+
+    <aside class="side">
+      <h3>Reservas recentes</h3>
+      <div id="reservations"></div>
+      <hr style="margin:12px 0; opacity:0.06">
+      <div class="small">As reservas também serão enviadas automaticamente para o grupo do Telegram (via bot).</div>
+    </aside>
+  </div>
+</main>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3 id="modalTitle"></h3>
+    <div class="small">Quantidade disponível: <span id="modalQty"></span></div>
+    <input id="nome" placeholder="Seu nome (obrigatório)">
+    <input id="telefone" placeholder="Telefone (obrigatório)">
+    <input id="endereco" placeholder="Endereço (obrigatório)">
+    <div class="actions">
+      <button class="btn primary" id="confirmBtn">Concluir reserva</button>
+      <button class="btn ghost" id="cancelBtn">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// === CONFIG: altere SERVER_URL e TELEGRAM_CHAT_ID/ BOT na etapa do passo-a-passo ===
+const SERVER_URL = 'http://localhost:3000'; // exemplo para testes locais; substituir pela URL do seu servidor ao publicar
+
+const itemsData = {
+  "Cozinha":[
+    {name:"Jogo de copo",qty:1},{name:"Jogo de talher (preto ou rose)",qty:1},{name:"Toalha de mesa",qty:1},{name:"Pano de prato",qty:1},{name:"Kit pia (preto ou rose)",qty:1},{name:"Lixeira de cozinha (preta)",qty:1},{name:"Panela grande",qty:1},{name:"Panela média",qty:1},{name:"Panela pequena",qty:1},{name:"Kit peneiras",qty:1},{name:"Kit potes (preto, branco, rose)",qty:3},{name:"Porta temperos",qty:1},{name:"Jarra elétrica (preta)",qty:1},{name:"Panela de pressão (alumínio ou preta)",qty:1},{name:"Tábua de carne",qty:1},{name:"Kit mantimentos",qty:1},{name:"Tigelas de sobremesa (vidro)",qty:1},{name:"Puxa saco",qty:1},{name:"Pratos fundo (branco)",qty:1},{name:"Forma de alumínio",qty:1},{name:"Forma de pudim",qty:1},{name:"Canecas",qty:1},{name:"Fervedor (preto, rose ou alumínio)",qty:1}
+  ],
+  "Banheiro":[{name:"Toalha de rosto",qty:1},{name:"Toalha de banho",qty:1},{name:"Cortina para box",qty:1},{name:"Kit tapete de banheiro (preto ou rose)",qty:1},{name:"Cesto de roupa (preto ou branco)",qty:1}],
+  "Quarto":[{name:"Jogo de lençol casal",qty:1},{name:"Travesseiros",qty:1},{name:"Jogo de fronha",qty:1},{name:"Manta microfibra casal",qty:1},{name:"Tapete passadeira peludo",qty:1}],
+  "Área de Serviço":[{name:"Baldes",qty:1},{name:"Panos de chão",qty:1},{name:"Kit limpeza (vassoura, rodo e pá)",qty:1},{name:"Caixas organizadora",qty:1},{name:"Escova de lavar roupa",qty:1},{name:"Prendedor",qty:1},{name:"Varal de roupa íntima",qty:1},{name:"Cadeira de abrir",qty:3},{name:"Ferro de passar roupa",qty:1},{name:"Mobi de limpeza",qty:1}]
+};
+
+// localStorage helpers
+function getState(){const raw = localStorage.getItem('andrielle_list_state'); if(!raw) return null; try{return JSON.parse(raw)}catch(e){return null}}
+function saveState(s){ localStorage.setItem('andrielle_list_state', JSON.stringify(s)); }
+function ensureState(){ let s = getState(); if(!s){ s={items:{},reservations:[]}; for(const cat in itemsData){ itemsData[cat].forEach(it=> s.items[it.name]={qty:it.qty,reserved:0}); } saveState(s);} return getState(); }
+let state = ensureState();
+
+function renderLists(){
+  for(const cat in itemsData){
+    const el = document.getElementById(cat); el.innerHTML='';
+    itemsData[cat].forEach(it=>{
+      const s = state.items[it.name];
+      const div = document.createElement('div'); div.className='item'+(s.qty-s.reserved<=0? ' reservado':'');
+      div.innerHTML = `<div class="meta"><div class="ico"><i class="fa-solid fa-box-open"></i></div><div><div class="name">${it.name}</div><div class="note">${cat}</div>${s.reserved>0?`<div class="small">Reservado por: ${state.reservations.filter(r=>r.item===it.name).map(r=>r.nome).join(', ')}</div>`:''}</div></div><div style="text-align:right"><div class="badge ${s.qty>1? 'limited':''}">${Math.max(0,s.qty-s.reserved)} / ${s.qty}</div><div class="small">${s.qty-s.reserved<=0? 'Esgotado':'Disponível'}</div></div>`;
+      div.onclick = ()=> openModal(it.name);
+      el.appendChild(div);
+    });
+  }
+  renderReservations();
+}
+function renderReservations(){ const box=document.getElementById('reservations'); box.innerHTML=''; const st=getState(); if(!st||!st.reservations||st.reservations.length===0){ box.innerHTML='<div class="small">Nenhuma reserva ainda</div>'; return; } st.reservations.slice().reverse().forEach(r=>{ const c=document.createElement('div'); c.className='res-card'; c.innerHTML=`<div><strong>${r.nome}</strong> reservou <strong>${r.item}</strong></div><div class="small">${r.telefone} • ${r.endereco}</div><div class="small" style="margin-top:6px;color:var(--muted)">${new Date(r.ts).toLocaleString()}</div>`; box.appendChild(c); }); }
+
+let currentItem=null;
+function openModal(item){ const st=getState(); const d=st.items[item]; if(!d||d.qty-d.reserved<=0) return; currentItem=item; document.getElementById('modalTitle').textContent=`Reservar: ${item}`; document.getElementById('modalQty').textContent=`${d.qty-d.reserved}`; document.getElementById('nome').value=''; document.getElementById('telefone').value=''; document.getElementById('endereco').value=''; document.getElementById('modalBg').style.display='flex'; }
+
+document.getElementById('cancelBtn').onclick = ()=> document.getElementById('modalBg').style.display='none';
+
+// Envia reserva para servidor que repassará ao Telegram
+async function sendReservationToServer(entry){
+  try{
+    const resp = await fetch(SERVER_URL + '/api/reserve', {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(entry)
+    });
+    if(!resp.ok) throw new Error('Erro no servidor');
+    return await resp.json();
+  }catch(err){ console.error('Falha ao enviar para servidor:', err); return {success:false, error:err.message}; }
+}
+
+// confirmar reserva: salva localmente e envia para servidor
+document.getElementById('confirmBtn').onclick = async ()=>{
+  const nome=document.getElementById('nome').value.trim();
+  const telefone=document.getElementById('telefone').value.trim();
+  const endereco=document.getElementById('endereco').value.trim();
+  if(!nome||!telefone||!endereco){ alert('Preencha nome, telefone e endereço.'); return; }
+
+  // salva local
+  const st = getState(); st.items[currentItem].reserved += 1; const entry={item:currentItem,nome,telefone,endereco,ts:Date.now()}; st.reservations.push(entry); saveState(st); state = st; document.getElementById('modalBg').style.display='none'; renderLists();
+
+  // envia para servidor (que fará o envio ao Telegram)
+  const result = await sendReservationToServer(entry);
+  if(result && result.success){ console.log('Enviado ao Telegram com sucesso'); }
+  else{ alert('Reserva salva localmente, mas houve erro ao notificar o Telegram. Veja o console para detalhes.'); }
+};
+
+// click fora do modal fecha
+document.getElementById('modalBg').addEventListener('click', e=>{ if(e.target.id==='modalBg') document.getElementById('modalBg').style.display='none'; });
+
+renderLists();
+</script>
+</body>
+</html>
