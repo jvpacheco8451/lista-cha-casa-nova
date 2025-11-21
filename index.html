@@ -1,577 +1,456 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Chá de Casa Nova - Andrielle</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Chá de Casa Nova - Andrielle</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-  <!-- FONTS & ICONS -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-  <style>
-    :root{
-      --pink-1:#ff2d92;
-      --pink-2:#ff6db7;
-      --bg:#fff6fb;
-      --card:#ffffff;
-      --muted:#9b9b9b;
-    }
+<style>
+  :root{--pink-1:#ff2d92;--pink-2:#ff6db7;--bg:#fff6fb;--card:#ffffff;--text:#333;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Poppins',sans-serif;background:linear-gradient(180deg,#fff0f7 0%, #fff6fb 35%, #fff 100%);color:var(--text); padding-bottom: 80px;}
+  
+  /* SPLASH SCREEN */
+  .splash{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#000000,#1c1c1c);z-index:9999;flex-direction:column; transition: opacity 0.8s ease;}
+  .splash .logo-spin{width:200px;height:200px;border-radius:20px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#000;box-shadow:0 30px 80px rgba(0,0,0,0.6)}
+  .splash img{width:140px;height:140px;border-radius:50%;object-fit:cover;animation:logoSpin 1.1s cubic-bezier(.2,.9,.3,1) infinite}
+  @keyframes logoSpin{0%{transform:rotateY(0) scale(1)}50%{transform:rotateY(180deg) scale(1.05)}100%{transform:rotateY(360deg) scale(1)}}
+  .splash h2{color:white;margin-top:18px;font-size:20px;letter-spacing:2px}
+  
+  /* HEADER */
+  header{padding:20px;background:linear-gradient(135deg,var(--pink-1),var(--pink-2));color:white;border-bottom-left-radius:25px;border-bottom-right-radius:25px;box-shadow:0 10px 30px rgba(255, 45, 146, 0.3);}
+  .header-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;}
+  .brand{display:flex;align-items:center;gap:15px;}
+  .logo-small{width:60px;height:60px;border-radius:50%;object-fit:cover;border:3px solid white;}
+  .title{font-size:20px;font-weight:700;line-height:1.2;}
+  .subtitle{font-size:12px;opacity:0.9;}
+  
+  .login-btn{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);padding:8px 16px;border-radius:20px;color:white;font-weight:600;cursor:pointer;font-size:12px;}
+  .admin-indicator{background:#fff;color:var(--pink-1);padding:5px 12px;border-radius:20px;font-weight:700;font-size:12px;display:none;}
 
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{
-      font-family:'Poppins',sans-serif;
-      background:linear-gradient(180deg,#fff0f7 0%, #fff6fb 35%, #fff 100%);
-      color:#222;
-      overflow-x:hidden;
-    }
+  /* MAIN */
+  main{max-width:1100px;margin:20px auto;padding:15px;}
+  
+  /* BARRA DE PESQUISA */
+  .topbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:20px;background:white;padding:10px;border-radius:15px;box-shadow:0 5px 20px rgba(0,0,0,0.03);}
+  .search{flex:1;padding:12px;border:none;outline:none;font-size:14px;background:transparent;}
+  .total-pill{background:#f3f3f3;color:#666;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:600;}
+  .add-item-btn{background:var(--pink-1);color:white;border:none;padding:8px 15px;border-radius:10px;font-weight:600;cursor:pointer;font-size:12px;}
 
-    /* ================= SPLASH MODERNA ESTILO NETFLIX ================= */
-    #splash{
-      position:fixed;
-      inset:0;
-      background:linear-gradient(135deg,#070707,#1a1a1a);
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      z-index:9999;
-      animation:fadeOut 0.8s ease forwards;
-      animation-delay:4.8s;
-    }
+  /* LISTA E CARDS */
+  .cat-title{color:var(--pink-1);font-size:20px;margin:25px 0 15px;font-weight:700;border-left:4px solid var(--pink-1);padding-left:10px;}
+  
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:15px;}
+  
+  /* CARD STYLE - ÍCONE ESQUERDA (LAYOUT QUADRADO) */
+  .card{
+    display:flex;
+    align-items:center; /* Centraliza verticalmente */
+    background:white;
+    padding:12px;
+    border-radius:16px;
+    box-shadow:0 4px 15px rgba(0,0,0,0.04);
+    border:1px solid transparent;
+    transition:all 0.2s;
+    cursor:pointer;
+    margin-bottom: 15px; /* Espaço entre itens */
+  }
+  .card:hover{transform:translateY(-3px);border-color:#ffcae4;}
+  .card.full{opacity:0.7;}
 
-    /* Caixa da logo */
-    .splash-box{
-      width:230px;
-      height:230px;
-      border-radius:26px;
-      background:#000;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      overflow:hidden;
-      box-shadow:0 40px 90px rgba(0,0,0,0.7);
-      animation:popIn 1s ease;
-    }
+  /* QUADRADO DO ÍCONE */
+  .icon-box{
+    width:65px;
+    height:65px;
+    min-width:65px;
+    background:linear-gradient(135deg, #fff0f7, #ffe6f2);
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:28px;
+    margin-right:15px; /* Espaço entre ícone e texto */
+    border:1px solid rgba(0,0,0,0.03);
+  }
 
-    /* Logo animada 3D */
-    #splashLogo{
-      width:160px;
-      height:160px;
-      object-fit:cover;
-      border-radius:50%;
-      animation:spin3D 4s ease-in-out forwards;
-    }
+  .card-content{flex:1;}
+  .item-name{font-weight:700;font-size:15px;color:#222;margin-bottom:4px;}
+  
+  .reserved-info{font-size:11px;color:#666;background:#f9f9f9;padding:4px 8px;border-radius:6px;margin-top:4px;display:inline-block;}
+  .reserved-info strong{color:var(--pink-1);}
 
-    /* Título */
-    #splash h2{
-      color:white;
-      margin-top:22px;
-      font-size:22px;
-      font-weight:700;
-      opacity:0;
-      animation:titleFade 1.6s ease forwards;
-      animation-delay:1s;
-      letter-spacing:1.5px;
-    }
+  /* AREA QUANTIDADE */
+  .qty-box{text-align:center;min-width:60px;display:flex;flex-direction:column;align-items:flex-end;}
+  .badge{background:#e0e0e0;color:#555;padding:5px 10px;border-radius:8px;font-size:13px;font-weight:700;}
+  .badge.available{background:linear-gradient(135deg,#00c853,#009624);color:white;}
+  .esgotado-txt{color:#ff2d55;font-size:10px;font-weight:800;margin-top:5px;text-transform:uppercase;border:1px solid #ff2d55;padding:2px 5px;border-radius:4px;}
 
-    /* ANIMAÇÕES */
-    @keyframes spin3D{
-      0%{transform:rotateY(0deg) scale(1)}
-      50%{transform:rotateY(180deg) scale(1.08)}
-      100%{transform:rotateY(360deg) scale(1)}
-    }
+  /* ADMIN BUTTONS */
+  .admin-actions{display:flex;gap:5px;margin-top:5px;}
+  .btn-adm{width:24px;height:24px;border-radius:6px;border:none;background:#eee;color:#333;cursor:pointer;font-weight:bold;}
+  .btn-adm:hover{background:#ccc;}
 
-    @keyframes popIn{
-      0%{transform:scale(0.4);opacity:0}
-      100%{transform:scale(1);opacity:1}
-    }
+  /* MODALS */
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:10000;}
+  .modal{background:white;width:90%;max-width:450px;padding:25px;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
+  .modal h3{color:var(--pink-1);margin-bottom:15px;}
+  
+  input{width:100%;padding:14px;border:1px solid #eee;border-radius:12px;margin-bottom:10px;font-family:inherit;background:#fafafa;}
+  
+  .btn-row{display:flex;gap:10px;margin-top:15px;}
+  .btn{flex:1;padding:14px;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-size:14px;}
+  .btn-primary{background:var(--pink-1);color:white;}
+  .btn-sec{background:#f0f0f0;color:#444;}
 
-    @keyframes titleFade{
-      0%{opacity:0;transform:translateY(20px)}
-      100%{opacity:1;transform:translateY(0)}
-    }
-
-    @keyframes fadeOut{
-      0%{opacity:1}
-      100%{opacity:0;visibility:hidden}
-    }
-
-
-    /* ================= RESTANTE DO SITE (seu layout original) ================= */
-
-    header{
-      position:relative;
-      padding:18px 22px;
-      background:linear-gradient(135deg,var(--pink-1),var(--pink-2));
-      color:white;
-      border-bottom-left-radius:20px;
-      border-bottom-right-radius:20px;
-      box-shadow:0 8px 30px rgba(0,0,0,0.12)
-    }
-
-    .header-inner{
-      max-width:1100px;
-      margin:0 auto;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-    }
-
-    .brand{display:flex;align-items:center;gap:12px}
-
-    .logo-small{
-      width:64px;height:64px;border-radius:12px;
-      object-fit:cover;
-      border:3px solid rgba(255,255,255,.95)
-    }
-
-    .title{font-size:18px;font-weight:700}
-    .subtitle{font-size:13px;opacity:.95}
-    .login-btn{
-      position:absolute;top:14px;right:14px;
-      background:rgba(255,255,255,.12);
-      border:1px solid rgba(255,255,255,.12);
-      padding:8px 10px;border-radius:8px;
-      color:white;font-weight:700;cursor:pointer
-    }
-
-    .admin-indicator{
-      margin-left:10px;background:rgba(255,255,255,.12);
-      padding:6px 10px;border-radius:999px;font-weight:700
-    }
-
-    main{max-width:1100px;margin:26px auto;padding:18px}
-
-    .topbar{display:flex;gap:12px;align-items:center;margin-bottom:14px}
-    .search{
-      flex:1;padding:12px;border-radius:12px;
-      border:1px solid #ffd6ec
-    }
-    .total-pill{
-      background:linear-gradient(90deg,var(--pink-1),var(--pink-2));
-      color:white;padding:8px 12px;border-radius:999px;font-weight:700
-    }
-
-    .cat-title{color:var(--pink-1);font-size:20px;margin:16px 0}
-
-    .grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
-      gap:12px
-    }
-
-    .card{
-      display:flex;gap:12px;align-items:center;
-      background:var(--card);padding:14px;border-radius:12px;
-      border:1px solid #ffeaf4;box-shadow:0 12px 40px rgba(17,12,12,0.03);
-      cursor:pointer;transition:transform .14s
-    }
-
-    .card:hover{transform:translateY(-6px)}
-
-    .emoji-square{
-      width:72px;height:72px;border-radius:12px;
-      display:flex;align-items:center;justify-content:center;
-      font-size:34px;background:linear-gradient(180deg,#fff5fb,#ffdff0);
-      border:1px solid rgba(0,0,0,0.03)
-    }
-
-    .thumb-img{width:72px;height:72px;border-radius:12px;object-fit:cover;border:1px solid #eee}
-
-    .card-body{flex:1}
-    .item-name{font-weight:700;font-size:16px}
-    .reserved-by{font-size:13px;color:#555;margin-top:6px;min-height:18px;word-break:break-word}
-
-    .qty-area{text-align:right}
-    .qty-badge{
-      background:linear-gradient(135deg,#4caf50,#00b300);
-      color:white;padding:8px 12px;border-radius:10px;
-      font-weight:800;display:inline-block
-    }
-
-    .esgotado{color:#ff2d55;font-weight:800;margin-top:6px}
-
-    .admin-controls{display:flex;gap:6px;align-items:center;margin-top:8px}
-
-    .btn-mini{
-      border:none;padding:6px 8px;border-radius:8px;
-      background:#fff;color:#333;cursor:pointer;
-      box-shadow:0 6px 18px rgba(0,0,0,0.06)
-    }
-
-    .add-item-btn{
-      background:white;color:var(--pink-1);border-radius:12px;
-      padding:8px 12px;border:none;cursor:pointer;font-weight:800
-    }
-
-    .modal-bg{
-      position:fixed;inset:0;background:rgba(0,0,0,0.45);
-      display:none;align-items:center;justify-content:center;z-index:999
-    }
-
-    .modal{
-      width:92%;max-width:520px;background:white;border-radius:12px;padding:18px
-    }
-
-    input,textarea,select{
-      width:100%;padding:12px;border-radius:10px;
-      border:1px solid #eee;margin-top:8px
-    }
-
-    .actions{display:flex;gap:8px;margin-top:12px}
-
-    .primary{
-      background:var(--pink-1);color:white;padding:10px;
-      border-radius:10px;border:none;cursor:pointer;font-weight:700
-    }
-
-    .ghost{
-      background:#f3f3f3;padding:10px;border-radius:10px;
-      border:none;cursor:pointer
-    }
-
-    footer{
-      max-width:1100px;margin:26px auto;text-align:center;
-      color:#666;font-size:13px
-    }
-
-    @media(max-width:640px){
-      .grid{grid-template-columns:1fr}
-      .emoji-square{width:60px;height:60px}
-    }
-  </style>
+  footer{text-align:center;padding:20px;color:#888;font-size:12px;max-width:600px;margin:0 auto;}
+</style>
 </head>
 <body>
 
-<!-- ================= SPLASH SCREEN ================= -->
-<div id="splash">
-  <div class="splash-box">
-    <img id="splashLogo" src="logo.png" alt="Logo">
-  </div>
-  <h2>Andrielle — Chá de Casa Nova</h2>
+<div id="splash" class="splash">
+  <div class="logo-spin"><img src="logo.png" alt="Logo"></div>
+  <h2 style="margin-top:20px;">Carregando Lista...</h2>
 </div>
 
-<!-- ================= CABEÇALHO ================= -->
 <header>
   <div class="header-inner">
     <div class="brand">
-      <img src="logo.png" class="logo-small" alt="logo">
+      <img src="logo.png" class="logo-small" alt="AT">
       <div>
-        <div class="title">Andrielle</div>
-        <div class="subtitle">Chá de Casa Nova — Lista Oficial</div>
+        <div class="title">Andrielle Telles</div>
+        <div class="subtitle">Chá de Casa Nova</div>
       </div>
     </div>
     <div>
-      <button id="loginBtn" class="login-btn">Login</button>
-      <span id="adminTag" class="admin-indicator" style="display:none">Administrador</span>
+      <button id="loginBtn" class="login-btn">Sou Admin</button>
+      <span id="adminTag" class="admin-indicator">MODO ADMIN</span>
     </div>
   </div>
 </header>
 
 <main>
   <div class="topbar">
-    <input id="search" class="search" placeholder="Pesquisar item ou categoria..." oninput="searchItem()">
-    <div class="total-pill">Itens Totais: <span id="totalCount">0</span></div>
-    <button id="addItemBtn" class="add-item-btn" style="display:none">+ Adicionar item</button>
+    <i class="fa fa-search" style="color:#ccc;margin-left:5px;"></i>
+    <input id="search" class="search" placeholder="O que você procura?" oninput="searchItem()">
+    <div class="total-pill"><span id="totalCount">0</span> itens</div>
+    <button id="addItemBtn" class="add-item-btn" style="display:none">+ Item</button>
+  </div>
+
+  <div id="emptyState" style="display:none;text-align:center;padding:40px;">
+    <p style="color: #666; margin-bottom: 10px;">A lista está vazia.</p>
+    <p style="font-size: 12px; color: #999;">Se você acabou de criar o banco, importe o JSON conforme o tutorial ou adicione itens manualmente.</p>
   </div>
 
   <div id="lists"></div>
 </main>
 
-<!-- ======== MODAIS ======== -->
 <div id="loginModal" class="modal-bg">
   <div class="modal">
-    <h3>Login</h3>
-    <input id="loginUser" placeholder="Usuário">
-    <input id="loginPass" placeholder="Senha" type="password">
-    <div class="actions">
-      <button class="primary" id="doLogin">Entrar</button>
-      <button class="ghost" id="cancelLogin">Cancelar</button>
+    <h3>Área da Noiva</h3>
+    <input id="user" placeholder="Usuário">
+    <input id="pass" type="password" placeholder="Senha">
+    <div class="btn-row">
+      <button class="btn btn-sec" id="closeLogin">Cancelar</button>
+      <button class="btn btn-primary" id="confirmLogin">Entrar</button>
     </div>
   </div>
 </div>
 
 <div id="reserveModal" class="modal-bg">
   <div class="modal">
-    <h3 id="reserveTitle">Reservar</h3>
-    <div>Disponível: <span id="reserveQty">0</span></div>
-    <input id="resNome" placeholder="Seu nome (obrigatório)">
-    <input id="resTel" placeholder="Telefone (obrigatório)">
-    <input id="resEnd" placeholder="Endereço (obrigatório)">
-    <div class="actions">
-      <button class="primary" id="confirmReserve">Concluir reserva</button>
-      <button class="ghost" id="cancelReserve">Cancelar</button>
+    <h3>Reservar Presente</h3>
+    <p style="margin-bottom:15px;color:#666;font-size:14px;">Você está reservando: <strong id="resItemName" style="color:#333">Item</strong></p>
+    
+    <input id="resNome" placeholder="Seu Nome Completo *">
+    <input id="resTel" placeholder="Seu Telefone (WhatsApp) *">
+    <input id="resEnd" placeholder="Seu Endereço *">
+    
+    <div class="btn-row">
+      <button class="btn btn-sec" id="closeRes">Cancelar</button>
+      <button class="btn btn-primary" id="confirmRes">Confirmar</button>
     </div>
   </div>
 </div>
 
 <div id="addModal" class="modal-bg">
   <div class="modal">
-    <h3>Adicionar item</h3>
-    <input id="newName" placeholder="Nome do item">
-    <input id="newCat" placeholder="Categoria">
-    <input id="newQty" placeholder="Quantidade (número)" type="number">
-    <input id="newEmoji" placeholder="Emoji (ex: 🎁)">
-    <div class="actions">
-      <button class="primary" id="addConfirm">Adicionar</button>
-      <button class="ghost" id="addCancel">Cancelar</button>
+    <h3>Novo Item</h3>
+    <input id="newItemName" placeholder="Nome do Item">
+    <input id="newItemCat" placeholder="Categoria (Cozinha, Banheiro...)">
+    <input id="newItemQty" type="number" placeholder="Quantidade">
+    <input id="newItemEmoji" placeholder="Emoji">
+    <div class="btn-row">
+      <button class="btn btn-sec" id="closeAdd">Cancelar</button>
+      <button class="btn btn-primary" id="confirmAdd">Salvar</button>
     </div>
   </div>
 </div>
 
-<footer>Design verificado — Em caso de dúvida, fale com a ADM — Andrielle Telles</footer>
-
-<!-- =============== FIREBASE =============== -->
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
+<footer>
+  Verifique os itens antes de selecionar. Em caso de dúvida entre em contato com a Andrielle.
+</footer>
 
 <script>
-/* ================================================================
-   INICIALIZAÇÃO FIREBASE
-================================================================ */
+/* --- CONFIGURAÇÃO (LINK ATUALIZADO) --- */
 const firebaseConfig = {
-  apiKey: "AIzaSyCFUGsfEfSduhEzfTYloCwcn7Fvll6phpg",
-  authDomain: "cha-casa-nova-ab339.firebaseapp.com",
-  databaseURL: "https://cha-casa-nova-ab339-default-rtdb.firebaseio.com",
-  projectId: "cha-casa-nova-ab339",
-  storageBucket: "cha-casa-nova-ab339.appspot.com",
-  messagingSenderId: "829057167454",
-  appId: "1:829057167454:web:5a356353b3c413d1fc84cf"
+  // URL DO NOVO PROJETO FORNECIDA PELO USUÁRIO
+  databaseURL: "https://cha-andrielle-oficial-default-rtdb.firebaseio.com"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const auth = firebase.auth();
 
-auth.signInAnonymously().catch(console.error);
+// NOME DA LISTA NO BANCO (Deve ser o mesmo do JSON importado: items_final)
+const itemsRef = db.ref('items_final');
 
+const TELEGRAM_TOKEN = '8559140827:AAHxA4d-MvDH-BanHYymnK2UKLRWM3KJrec';
+const TELEGRAM_CHAT_ID = '-1003451773752';
+const ADMIN_USER = 'jvpacheco845';
+const ADMIN_PASS = '22demaio';
 
-/* ================================================================
-   SPLASH — REMOVE APÓS 5 SEGUNDOS
-================================================================ */
-setTimeout(() => {
-  document.getElementById("splash").style.display = "none";
-}, 5000);
-
-
-
-/* ================================================================
-   O CÓDIGO ABAIXO É 100% O MESMO DO SEU — SOMENTE ORGANIZADO
-================================================================ */
-
-/* A LISTA DE ITENS (100% IGUAL À SUA) */
-const items = [ /* ← Sua lista inteira original permanece aqui… */ ];
-
-let state = {};
+let allItems = [];
 let isAdmin = false;
 
-loadStateFromFirebase(loaded => {
-  state = loaded;
-  render();
+/* --- INICIALIZAÇÃO --- */
+window.addEventListener('load', ()=>{
+  setTimeout(()=>{
+    document.getElementById('splash').style.opacity=0;
+    setTimeout(()=>document.getElementById('splash').remove(), 800);
+  }, 4000);
 });
 
-function loadStateFromFirebase(cb){
-  db.ref('state').once('value').then(snap=>{
-    if(snap.val()) cb(snap.val());
-    else{
-      const init={};
-      items.forEach(i=>init[i.name]={reserved:0,people:[]});
-      db.ref('state').set(init);
-      cb(init);
-    }
-  });
-}
+// Monitorar dados do Firebase
+itemsRef.on('value', (snapshot) => {
+  const val = snapshot.val();
+  const listContainer = document.getElementById('lists');
+  
+  if(!val){
+    // Se estiver vazio
+    document.getElementById('emptyState').style.display = 'block';
+    listContainer.innerHTML = '';
+    document.getElementById('totalCount').innerText = '0';
+    return;
+  }
 
-function saveStateToFirebase(obj){
-  db.ref('state').set(obj);
-}
+  document.getElementById('emptyState').style.display = 'none';
+  
+  // Converter para array (suporta importação via JSON que usa IDs numéricos ou push keys)
+  allItems = Object.entries(val).map(([k, v]) => ({
+    id: k,
+    ...v,
+    peopleList: v.people ? Object.values(v.people) : []
+  }));
 
+  render(allItems);
+}, (error) => {
+  alert("Erro de acesso ao Banco de Dados: " + error.message + "\nVerifique se você publicou as REGRAS no Console do Firebase.");
+});
 
-/* ========== Renderização (mantida) ========== */
-function render(filterList){
-  const container=document.getElementById('lists');
-  container.innerHTML='';
-  const list=filterList||items;
+/* --- RENDERIZAÇÃO --- */
+function render(list) {
+  const container = document.getElementById('lists');
+  container.innerHTML = '';
 
-  let currentCat='';
-  let total=0; items.forEach(i=>total+=i.qty);
-  document.getElementById('totalCount').textContent=total;
+  // Ordenar categorias
+  const catOrder = {'Cozinha':1, 'Banheiro':2, 'Quarto':3, 'Área de Serviço':4};
+  list.sort((a,b) => (catOrder[a.cat]||99) - (catOrder[b.cat]||99));
 
-  list.forEach(it=>{
-    if(it.cat!==currentCat){
-      currentCat=it.cat;
-      const h=document.createElement('div');
-      h.className='cat-title';
-      h.textContent=currentCat;
+  // Atualizar Total
+  const total = list.reduce((acc, cur) => acc + (parseInt(cur.qty)||0), 0);
+  document.getElementById('totalCount').innerText = total;
+
+  let curCat = '';
+
+  list.forEach(item => {
+    // Cabeçalho Categoria
+    if(item.cat !== curCat){
+      curCat = item.cat;
+      const h = document.createElement('div');
+      h.className = 'cat-title';
+      h.innerText = curCat;
       container.appendChild(h);
     }
 
-    const st=state[it.name]||{reserved:0,people:[]};
-    st.reserved=Math.min(it.qty,st.people.length);
-    const remain=it.qty-st.reserved;
+    const reservedCount = item.peopleList.length;
+    const isFull = reservedCount >= item.qty;
 
-    const card=document.createElement('div');
-    card.className='card';
+    // HTML DO CARD
+    const div = document.createElement('div');
+    div.className = `card ${isFull ? 'full' : ''}`;
+    
+    div.innerHTML = `
+      <div class="icon-box">${item.emoji || '🎁'}</div>
+      
+      <div class="card-content">
+        <div class="item-name">${item.name}</div>
+        ${reservedCount > 0 ? 
+          `<div class="reserved-info">Reservado por: <strong>${item.peopleList.join(', ')}</strong></div>` 
+          : ''}
+      </div>
 
-    let left;
-    if(it.img){
-      left=document.createElement('img');
-      left.src=it.img;
-      left.className='thumb-img';
-    }else{
-      left=document.createElement('div');
-      left.className='emoji-square';
-      left.textContent=it.emoji||'🎁';
-    }
-    card.appendChild(left);
+      <div class="qty-box">
+        <div class="badge ${!isFull ? 'available' : ''}">${reservedCount}/${item.qty}</div>
+        ${isFull ? '<div class="esgotado-txt">Esgotado</div>' : ''}
+        
+        ${isAdmin ? `
+        <div class="admin-actions">
+          <button class="btn-adm" onclick="changeQty('${item.id}', -1, event)">-</button>
+          <button class="btn-adm" onclick="changeQty('${item.id}', 1, event)">+</button>
+        </div>` : ''}
+      </div>
+    `;
 
-    const body=document.createElement('div');
-    body.className='card-body';
-    const nm=document.createElement('div');
-    nm.className='item-name';
-    nm.textContent=it.name;
-    body.appendChild(nm);
+    // Click Event
+    div.onclick = (e) => {
+      // Se clicar nos botões de admin, não abre modal
+      if(e.target.tagName === 'BUTTON') return;
+      
+      if(isAdmin) return;
+      if(isFull) return alert("Este item já foi totalmente reservado!");
+      
+      openReserveModal(item);
+    };
 
-    const rb=document.createElement('div');
-    rb.className='reserved-by';
-    rb.textContent=st.people.length?('Reservado por: '+st.people.join(', ')):'Ninguém ainda';
-    body.appendChild(rb);
-    card.appendChild(body);
-
-    const right=document.createElement('div');
-    right.className='qty-area';
-    const qb=document.createElement('div');
-    qb.className='qty-badge';
-    qb.textContent=st.reserved+'/'+it.qty;
-    right.appendChild(qb);
-
-    if(st.reserved>=it.qty){
-      const es=document.createElement('div');
-      es.className='esgotado';
-      es.textContent='ESGOTADO';
-      right.appendChild(es);
-    }
-
-    card.appendChild(right);
-
-    card.onclick=()=>{ if(remain>0) openReserve(it.name); else alert('Item esgotado'); };
-
-    container.appendChild(card);
+    container.appendChild(div);
   });
 }
 
+/* --- LÓGICA RESERVA --- */
+let selectedItem = null;
+const resModal = document.getElementById('reserveModal');
 
-/* ========== BUSCA ========== */
-function searchItem(){
-  const t=document.getElementById('search').value.trim().toLowerCase();
-  if(!t) return render();
-  const f=items.filter(i=>i.name.toLowerCase().includes(t)||i.cat.toLowerCase().includes(t));
-  render(f);
+function openReserveModal(item){
+  selectedItem = item;
+  document.getElementById('resItemName').innerText = item.name;
+  document.getElementById('resNome').value = '';
+  document.getElementById('resTel').value = '';
+  document.getElementById('resEnd').value = '';
+  resModal.style.display = 'flex';
 }
 
+document.getElementById('closeRes').onclick = () => resModal.style.display = 'none';
 
-/* ========== RESERVA ========== */
-let currentItem=null;
+document.getElementById('confirmRes').onclick = () => {
+  const nome = document.getElementById('resNome').value.trim();
+  const tel = document.getElementById('resTel').value.trim();
+  const end = document.getElementById('resEnd').value.trim();
 
-function openReserve(name){
-  currentItem=name;
-  const it=items.find(i=>i.name===name);
-  const st=state[name];
-  document.getElementById('reserveTitle').textContent='Reservar: '+name;
-  document.getElementById('reserveQty').textContent=it.qty-st.reserved;
-  document.getElementById('reserveModal').style.display='flex';
-}
+  if(!nome || !tel || !end) return alert("Preencha todos os campos!");
 
-document.getElementById('cancelReserve').onclick=()=>document.getElementById('reserveModal').style.display='none';
+  // Verifica disponibilidade novamente
+  itemsRef.child(selectedItem.id).once('value', snap => {
+    const val = snap.val();
+    const currentRes = val.people ? Object.keys(val.people).length : 0;
 
-document.getElementById('confirmReserve').onclick=()=>{
-  const nome=resNome.value.trim();
-  const tel=resTel.value.trim();
-  const end=resEnd.value.trim();
+    if(currentRes >= val.qty){
+      alert("Alguém acabou de pegar a última unidade! :(");
+      resModal.style.display = 'none';
+      return;
+    }
 
-  if(!nome||!tel||!end) return alert("Preencha todos os campos");
-
-  const it=items.find(i=>i.name===currentItem);
-  const st=state[currentItem];
-
-  if(st.reserved>=it.qty) return alert("Item esgotado");
-
-  st.people.push(nome);
-  st.reserved++;
-
-  saveStateToFirebase(state);
-
-  document.getElementById('reserveModal').style.display='none';
-  render();
+    // Salva
+    itemsRef.child(selectedItem.id).child('people').push(nome);
+    
+    // Telegram
+    sendTelegram(`🎁 *NOVA RESERVA*\nItem: ${selectedItem.name}\nNome: ${nome}\nTel: ${tel}\nEnd: ${end}`);
+    
+    resModal.style.display = 'none';
+    alert("Reserva Confirmada!");
+  });
 };
 
+/* --- LÓGICA ADMIN --- */
+const loginModal = document.getElementById('loginModal');
+document.getElementById('loginBtn').onclick = () => loginModal.style.display = 'flex';
+document.getElementById('closeLogin').onclick = () => loginModal.style.display = 'none';
 
-/* ========== LOGIN ADMIN ========== */
-const ADMIN_USER="jvpacheco845";
-const ADMIN_PASS="22demaio";
-
-document.getElementById("loginBtn").onclick=()=>{
-  loginModal.style.display="flex";
-};
-
-document.getElementById("cancelLogin").onclick=()=>{
-  loginModal.style.display="none";
-};
-
-document.getElementById("doLogin").onclick=()=>{
-  const u=loginUser.value.trim();
-  const p=loginPass.value.trim();
-
-  if(u===ADMIN_USER && p===ADMIN_PASS){
-    isAdmin=true;
-    addItemBtn.style.display="inline-block";
-    adminTag.style.display="inline-block";
-    loginBtn.style.display="none";
-    loginModal.style.display="none";
-    alert("Login efetuado!");
-    render();
+document.getElementById('confirmLogin').onclick = () => {
+  const u = document.getElementById('user').value;
+  const p = document.getElementById('pass').value;
+  
+  if(u === ADMIN_USER && p === ADMIN_PASS){
+    isAdmin = true;
+    document.getElementById('loginBtn').style.display = 'none';
+    document.getElementById('adminTag').style.display = 'block';
+    document.getElementById('addItemBtn').style.display = 'block';
+    loginModal.style.display = 'none';
+    render(allItems); // Re-render para mostrar botões +/-
   } else {
-    alert("Credenciais incorretas");
+    alert("Acesso Negado");
   }
 };
 
+// Change Qty & Remove User if needed
+function changeQty(id, delta, event){
+  event.stopPropagation();
+  const item = allItems.find(i => i.id === id);
+  const newQty = (parseInt(item.qty)||0) + delta;
+  if(newQty < 0) return;
 
-/* ========== ADICIONAR ITEM (ADMIN) ========== */
-addItemBtn.onclick=()=>{
-  addModal.style.display="flex";
+  const currentRes = item.peopleList.length;
+
+  if(newQty < currentRes){
+    // Precisa remover o último
+    itemsRef.child(id).child('people').limitToLast(1).once('value', snap => {
+      snap.forEach(child => {
+        const name = child.val();
+        child.ref.remove(); // Remove do DB
+        itemsRef.child(id).update({qty: newQty}); // Atualiza Qtd
+        sendTelegram(`⚠️ *RESERVA REMOVIDA PELO ADMIN*\nItem: ${item.name}\nNome Removido: ${name}`);
+      });
+    });
+  } else {
+    // Apenas atualiza qtd
+    itemsRef.child(id).update({qty: newQty});
+  }
+}
+
+/* --- ADD ITEM (ADMIN) --- */
+const addModal = document.getElementById('addModal');
+document.getElementById('addItemBtn').onclick = () => addModal.style.display = 'flex';
+document.getElementById('closeAdd').onclick = () => addModal.style.display = 'none';
+
+document.getElementById('confirmAdd').onclick = () => {
+  const name = document.getElementById('newItemName').value;
+  const cat = document.getElementById('newItemCat').value;
+  const qty = document.getElementById('newItemQty').value;
+  const emoji = document.getElementById('newItemEmoji').value || '🎁';
+
+  if(name && cat && qty){
+    itemsRef.push({name, cat, qty: parseInt(qty), emoji, people:{}});
+    addModal.style.display = 'none';
+  } else {
+    alert("Preencha tudo");
+  }
 };
 
-addCancel.onclick=()=>addModal.style.display="none";
+/* --- SEARCH --- */
+function searchItem(){
+  const term = document.getElementById('search').value.toLowerCase();
+  if(!term) return render(allItems);
+  const filtered = allItems.filter(i => i.name.toLowerCase().includes(term) || i.cat.toLowerCase().includes(term));
+  render(filtered);
+}
 
-addConfirm.onclick=()=>{
-  if(!isAdmin) return alert("Apenas admin");
+/* --- TELEGRAM --- */
+async function sendTelegram(text){
+  try {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({chat_id: TELEGRAM_CHAT_ID, text, parse_mode:'Markdown'})
+    });
+  } catch(e){ console.error(e); }
+}
 
-  const name=newName.value.trim();
-  const cat=newCat.value.trim()||"Outros";
-  const qty=parseInt(newQty.value)||1;
-  const emoji=newEmoji.value.trim()||"🎁";
-
-  if(!name) return alert("Digite o nome");
-
-  items.push({cat,name,qty,emoji});
-  state[name]={reserved:0,people:[]};
-
-  saveStateToFirebase(state);
-
-  addModal.style.display="none";
-  render();
-};
-
-
-/* ========== FECHAR MODAIS CLICANDO FORA ========== */
-["loginModal","reserveModal","addModal"].forEach(id=>{
-  const el=document.getElementById(id);
-  el.addEventListener("click",e=>{ if(e.target===el) el.style.display="none"; });
+/* --- FECHAR MODAL CLICK FORA --- */
+document.querySelectorAll('.modal-bg').forEach(el => {
+  el.addEventListener('click', e => { if(e.target === el) el.style.display = 'none'; });
 });
-</script>
 
+</script>
 </body>
 </html>
