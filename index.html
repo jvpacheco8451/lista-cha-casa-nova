@@ -47,10 +47,10 @@
   
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:15px;}
   
-  /* CARD STYLE - ÍCONE ESQUERDA (LAYOUT QUADRADO) */
+  /* CARD STYLE */
   .card{
     display:flex;
-    align-items:center; /* Centraliza verticalmente */
+    align-items:center;
     background:white;
     padding:12px;
     border-radius:16px;
@@ -58,12 +58,13 @@
     border:1px solid transparent;
     transition:all 0.2s;
     cursor:pointer;
-    margin-bottom: 15px; /* Espaço entre itens */
+    margin-bottom: 15px;
+    position: relative;
   }
   .card:hover{transform:translateY(-3px);border-color:#ffcae4;}
-  .card.full{opacity:0.7;}
+  .card.full{opacity:0.6; background: #fcfcfc;}
 
-  /* QUADRADO DO ÍCONE */
+  /* ÍCONE */
   .icon-box{
     width:65px;
     height:65px;
@@ -74,7 +75,7 @@
     align-items:center;
     justify-content:center;
     font-size:28px;
-    margin-right:15px; /* Espaço entre ícone e texto */
+    margin-right:15px;
     border:1px solid rgba(0,0,0,0.03);
   }
 
@@ -84,16 +85,16 @@
   .reserved-info{font-size:11px;color:#666;background:#f9f9f9;padding:4px 8px;border-radius:6px;margin-top:4px;display:inline-block;}
   .reserved-info strong{color:var(--pink-1);}
 
-  /* AREA QUANTIDADE */
-  .qty-box{text-align:center;min-width:60px;display:flex;flex-direction:column;align-items:flex-end;}
+  /* QUANTIDADE */
+  .qty-box{text-align:center;min-width:70px;display:flex;flex-direction:column;align-items:flex-end;}
   .badge{background:#e0e0e0;color:#555;padding:5px 10px;border-radius:8px;font-size:13px;font-weight:700;}
   .badge.available{background:linear-gradient(135deg,#00c853,#009624);color:white;}
   .esgotado-txt{color:#ff2d55;font-size:10px;font-weight:800;margin-top:5px;text-transform:uppercase;border:1px solid #ff2d55;padding:2px 5px;border-radius:4px;}
 
   /* ADMIN BUTTONS */
-  .admin-actions{display:flex;gap:5px;margin-top:5px;}
-  .btn-adm{width:24px;height:24px;border-radius:6px;border:none;background:#eee;color:#333;cursor:pointer;font-weight:bold;}
-  .btn-adm:hover{background:#ccc;}
+  .admin-actions{display:flex;gap:8px;margin-top:8px;}
+  .btn-adm{width:28px;height:28px;border-radius:8px;border:none;background:#eee;color:#333;cursor:pointer;font-weight:bold; font-size:16px; display:flex; align-items:center; justify-content:center;}
+  .btn-adm:hover{background:#ddd;}
 
   /* MODALS */
   .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:10000;}
@@ -136,14 +137,13 @@
 <main>
   <div class="topbar">
     <i class="fa fa-search" style="color:#ccc;margin-left:5px;"></i>
-    <input id="search" class="search" placeholder="O que você procura?" oninput="searchItem()">
+    <input id="search" class="search" placeholder="Pesquisar presente..." oninput="searchItem()">
     <div class="total-pill"><span id="totalCount">0</span> itens</div>
     <button id="addItemBtn" class="add-item-btn" style="display:none">+ Item</button>
   </div>
 
   <div id="emptyState" style="display:none;text-align:center;padding:40px;">
-    <p style="color: #666; margin-bottom: 10px;">A lista está vazia.</p>
-    <p style="font-size: 12px; color: #999;">Se você acabou de criar o banco, importe o JSON conforme o tutorial ou adicione itens manualmente.</p>
+    <p style="color: #666;">Carregando ou Lista Vazia...</p>
   </div>
 
   <div id="lists"></div>
@@ -164,10 +164,10 @@
 <div id="reserveModal" class="modal-bg">
   <div class="modal">
     <h3>Reservar Presente</h3>
-    <p style="margin-bottom:15px;color:#666;font-size:14px;">Você está reservando: <strong id="resItemName" style="color:#333">Item</strong></p>
+    <p style="margin-bottom:15px;color:#666;font-size:14px;">Item: <strong id="resItemName" style="color:var(--pink-1)">...</strong></p>
     
     <input id="resNome" placeholder="Seu Nome Completo *">
-    <input id="resTel" placeholder="Seu Telefone (WhatsApp) *">
+    <input id="resTel" placeholder="Seu WhatsApp *">
     <input id="resEnd" placeholder="Seu Endereço *">
     
     <div class="btn-row">
@@ -179,11 +179,11 @@
 
 <div id="addModal" class="modal-bg">
   <div class="modal">
-    <h3>Novo Item</h3>
+    <h3>Adicionar Novo</h3>
     <input id="newItemName" placeholder="Nome do Item">
-    <input id="newItemCat" placeholder="Categoria (Cozinha, Banheiro...)">
-    <input id="newItemQty" type="number" placeholder="Quantidade">
-    <input id="newItemEmoji" placeholder="Emoji">
+    <input id="newItemCat" placeholder="Categoria">
+    <input id="newItemQty" type="number" placeholder="Quantidade Total">
+    <input id="newItemEmoji" placeholder="Emoji (ex: 🎁)">
     <div class="btn-row">
       <button class="btn btn-sec" id="closeAdd">Cancelar</button>
       <button class="btn btn-primary" id="confirmAdd">Salvar</button>
@@ -196,15 +196,12 @@
 </footer>
 
 <script>
-/* --- CONFIGURAÇÃO (LINK ATUALIZADO) --- */
+/* --- CONFIGURAÇÃO --- */
 const firebaseConfig = {
-  // URL DO NOVO PROJETO FORNECIDA PELO USUÁRIO
   databaseURL: "https://cha-andrielle-oficial-default-rtdb.firebaseio.com"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-
-// NOME DA LISTA NO BANCO (Deve ser o mesmo do JSON importado: items_final)
 const itemsRef = db.ref('items_final');
 
 const TELEGRAM_TOKEN = '8559140827:AAHxA4d-MvDH-BanHYymnK2UKLRWM3KJrec';
@@ -223,13 +220,12 @@ window.addEventListener('load', ()=>{
   }, 4000);
 });
 
-// Monitorar dados do Firebase
+// Listener Realtime
 itemsRef.on('value', (snapshot) => {
   const val = snapshot.val();
   const listContainer = document.getElementById('lists');
   
   if(!val){
-    // Se estiver vazio
     document.getElementById('emptyState').style.display = 'block';
     listContainer.innerHTML = '';
     document.getElementById('totalCount').innerText = '0';
@@ -238,7 +234,6 @@ itemsRef.on('value', (snapshot) => {
 
   document.getElementById('emptyState').style.display = 'none';
   
-  // Converter para array (suporta importação via JSON que usa IDs numéricos ou push keys)
   allItems = Object.entries(val).map(([k, v]) => ({
     id: k,
     ...v,
@@ -246,27 +241,24 @@ itemsRef.on('value', (snapshot) => {
   }));
 
   render(allItems);
-}, (error) => {
-  alert("Erro de acesso ao Banco de Dados: " + error.message + "\nVerifique se você publicou as REGRAS no Console do Firebase.");
 });
 
-/* --- RENDERIZAÇÃO --- */
+/* --- RENDER --- */
 function render(list) {
   const container = document.getElementById('lists');
   container.innerHTML = '';
 
-  // Ordenar categorias
+  // Ordem Fixa
   const catOrder = {'Cozinha':1, 'Banheiro':2, 'Quarto':3, 'Área de Serviço':4};
   list.sort((a,b) => (catOrder[a.cat]||99) - (catOrder[b.cat]||99));
 
-  // Atualizar Total
+  // Contagem Total
   const total = list.reduce((acc, cur) => acc + (parseInt(cur.qty)||0), 0);
   document.getElementById('totalCount').innerText = total;
 
   let curCat = '';
 
   list.forEach(item => {
-    // Cabeçalho Categoria
     if(item.cat !== curCat){
       curCat = item.cat;
       const h = document.createElement('div');
@@ -278,7 +270,6 @@ function render(list) {
     const reservedCount = item.peopleList.length;
     const isFull = reservedCount >= item.qty;
 
-    // HTML DO CARD
     const div = document.createElement('div');
     div.className = `card ${isFull ? 'full' : ''}`;
     
@@ -304,14 +295,11 @@ function render(list) {
       </div>
     `;
 
-    // Click Event
+    // Click Card
     div.onclick = (e) => {
-      // Se clicar nos botões de admin, não abre modal
-      if(e.target.tagName === 'BUTTON') return;
-      
+      if(e.target.closest('.admin-actions')) return; // Ignora clique nos botões admin
       if(isAdmin) return;
       if(isFull) return alert("Este item já foi totalmente reservado!");
-      
       openReserveModal(item);
     };
 
@@ -319,7 +307,7 @@ function render(list) {
   });
 }
 
-/* --- LÓGICA RESERVA --- */
+/* --- RESERVA --- */
 let selectedItem = null;
 const resModal = document.getElementById('reserveModal');
 
@@ -341,29 +329,25 @@ document.getElementById('confirmRes').onclick = () => {
 
   if(!nome || !tel || !end) return alert("Preencha todos os campos!");
 
-  // Verifica disponibilidade novamente
+  // Verificação de segurança (Double Check)
   itemsRef.child(selectedItem.id).once('value', snap => {
     const val = snap.val();
     const currentRes = val.people ? Object.keys(val.people).length : 0;
 
     if(currentRes >= val.qty){
-      alert("Alguém acabou de pegar a última unidade! :(");
+      alert("Ops! Alguém acabou de reservar o último.");
       resModal.style.display = 'none';
       return;
     }
 
-    // Salva
     itemsRef.child(selectedItem.id).child('people').push(nome);
-    
-    // Telegram
     sendTelegram(`🎁 *NOVA RESERVA*\nItem: ${selectedItem.name}\nNome: ${nome}\nTel: ${tel}\nEnd: ${end}`);
-    
     resModal.style.display = 'none';
     alert("Reserva Confirmada!");
   });
 };
 
-/* --- LÓGICA ADMIN --- */
+/* --- ADMIN LOGIN --- */
 const loginModal = document.getElementById('loginModal');
 document.getElementById('loginBtn').onclick = () => loginModal.style.display = 'flex';
 document.getElementById('closeLogin').onclick = () => loginModal.style.display = 'none';
@@ -378,38 +362,39 @@ document.getElementById('confirmLogin').onclick = () => {
     document.getElementById('adminTag').style.display = 'block';
     document.getElementById('addItemBtn').style.display = 'block';
     loginModal.style.display = 'none';
-    render(allItems); // Re-render para mostrar botões +/-
+    render(allItems);
   } else {
-    alert("Acesso Negado");
+    alert("Senha Incorreta");
   }
 };
 
-// Change Qty & Remove User if needed
+/* --- LOGICA ALTERAR QTD (CORRIGIDA) --- */
 function changeQty(id, delta, event){
   event.stopPropagation();
   const item = allItems.find(i => i.id === id);
   const newQty = (parseInt(item.qty)||0) + delta;
-  if(newQty < 0) return;
+  
+  if(newQty < 0) return; // Não permite negativo
 
   const currentRes = item.peopleList.length;
 
   if(newQty < currentRes){
-    // Precisa remover o último
+    // Se diminuir a quantidade para menos do que já tem de reserva, remove o último
     itemsRef.child(id).child('people').limitToLast(1).once('value', snap => {
       snap.forEach(child => {
         const name = child.val();
         child.ref.remove(); // Remove do DB
         itemsRef.child(id).update({qty: newQty}); // Atualiza Qtd
-        sendTelegram(`⚠️ *RESERVA REMOVIDA PELO ADMIN*\nItem: ${item.name}\nNome Removido: ${name}`);
+        sendTelegram(`⚠️ *ADMIN REMOVEU RESERVA*\nItem: ${item.name}\nQtd reduzida para: ${newQty}\nRemovido: ${name}`);
       });
     });
   } else {
-    // Apenas atualiza qtd
+    // Apenas atualiza quantidade (Ex: de 1 para 2, ou 2 para 1 sem afetar reserva)
     itemsRef.child(id).update({qty: newQty});
   }
 }
 
-/* --- ADD ITEM (ADMIN) --- */
+/* --- ADD ITEM --- */
 const addModal = document.getElementById('addModal');
 document.getElementById('addItemBtn').onclick = () => addModal.style.display = 'flex';
 document.getElementById('closeAdd').onclick = () => addModal.style.display = 'none';
@@ -450,7 +435,6 @@ async function sendTelegram(text){
 document.querySelectorAll('.modal-bg').forEach(el => {
   el.addEventListener('click', e => { if(e.target === el) el.style.display = 'none'; });
 });
-
 </script>
 </body>
 </html>
